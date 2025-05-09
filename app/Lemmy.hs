@@ -12,6 +12,7 @@ import Data.Maybe (fromMaybe)
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
 import qualified Config as C
+import PasswordManager
 
 
 -- Define data types for the API responses
@@ -72,19 +73,15 @@ fetchUserDetails instanceUrl jwtToken user = do
     response <- httpLBS req
     return $ eitherDecode (getResponseBody response)
 
-getPasswordIO :: IO (Maybe String)
-getPasswordIO = runInputT defaultSettings $ getPassword (Just '*') "Enter password: "
-
 
 -- Example usage
 entrypoint :: C.Config -> IO ()
 entrypoint config = do
 
-    password <- getPasswordIO
-
+    password <- managePasswordIO config
     let instanceUrl = C.url (C.instanceConfig (C.lemmy config))
         myUsername = C.username (C.credentials (C.lemmy config))
-        myPassword = T.pack $ fromMaybe ""  password
+        myPassword = T.pack password
 
     -- Step 1: Log in and get JWT
     loginResult <- loginToLemmy instanceUrl myUsername myPassword

@@ -14,6 +14,8 @@ data LemmyConfig = LemmyConfig
 
 data Credentials = Credentials
   { username :: T.Text
+  , password_file :: T.Text
+  , private_key_file :: T.Text
   -- password field is commented out as per the config file
   -- , password :: T.Text
   } deriving (Generic, Show)
