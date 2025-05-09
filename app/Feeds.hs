@@ -8,16 +8,18 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Control.Monad (unless)
 import qualified Data.ByteString.Char8 as BS
-import Data.Maybe ( fromMaybe )
+import Data.Maybe ( fromMaybe, maybeToList )
 
 -- Qualified imports for feed types
 import qualified Text.RSS.Syntax as RSS
 import qualified Text.Atom.Feed as Atom
 import Text.Atom.Feed (TextContent(..))
+import qualified Text.Atom.Feed as Link
 
-data FeedEntry = FeedEntry { title :: String
-                           , date :: Maybe String
-                           , content :: String
+data FeedEntry = FeedEntry { title :: T.Text
+                           , date :: Maybe T.Text
+                           , content :: T.Text
+                           , links :: [T.Text]
 } deriving (Show)
 
 -- | Fetch feed content from a URL
@@ -42,23 +44,25 @@ feedToFeedEntries feed = case feed of
 
 feedItemToFeedEntry :: RSS.RSSItem -> FeedEntry
 feedItemToFeedEntry item = FeedEntry {
-    title = maybe "- [No Title]" T.unpack (RSS.rssItemTitle item)
-    , date = fmap T.unpack (RSS.rssItemPubDate item)
-    , content = T.unpack (fromMaybe "" (RSS.rssItemDescription item))
+    title = fromMaybe "- [No Title]" (RSS.rssItemTitle item)
+    , date = RSS.rssItemPubDate item
+    , content = fromMaybe "" (RSS.rssItemDescription item)
+    , links = maybeToList $ RSS.rssItemLink item
         }
 
 atomItemToFeedEntry :: Atom.Entry -> FeedEntry
 atomItemToFeedEntry entry = FeedEntry {
     title = case Atom.entryTitle entry of
-                    TextString txt -> T.unpack txt
-                    HTMLString txt -> T.unpack txt
+                    TextString txt -> txt
+                    HTMLString txt -> txt
                     XHTMLString _ -> "[XHTML content]"
-    , date =  fmap T.unpack (Atom.entryPublished entry)
+    , date =  Atom.entryPublished entry
     , content = case Atom.entrySummary entry of
-        Just (TextString txt) -> T.unpack txt
-        Just (HTMLString txt) -> T.unpack txt
+        Just (TextString txt) -> txt
+        Just (HTMLString txt) -> txt
         Just (XHTMLString _) -> "[XHTML content]"
         Nothing -> ""
+    , links = Link.linkHref <$> Atom.entryLinks entry
 }
 
 -- Updated displayFeed function with proper Atom feed handling

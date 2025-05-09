@@ -1,0 +1,6 @@
+lemmy:
+  credentials:
+    username: "JohnDoe"
+
+  instanceConfig:
+    url: "https://enterprise.lemmy.ml" 
