@@ -14,7 +14,7 @@ main = do
         Right cfg -> do
             putStrLn "Successfully loaded config."
 
-            Lemmy.entrypoint cfg
+            Lemmy.entrypoint "test-instance" cfg
 
     {-
     atomFeedExample <- Feeds.fetchFeed "https://en.wikipedia.org/w/api.php?action=feedrecentchanges&feedformat=atom"

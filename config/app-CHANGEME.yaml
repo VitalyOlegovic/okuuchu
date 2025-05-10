@@ -1,8 +1,9 @@
 lemmy:
-  credentials:
-    username: "JohnDoe"
-    password_file: "/path/to/password_file.pem"  # Path to file containing password
-    private_key_file: "/path/to/private_key.pem"  # Path to private key file
-
   instanceConfig:
-    url: "https://enterprise.lemmy.ml" 
+    - instance:
+        id: "test-instance"
+        url: "https://enterprise.lemmy.ml"
+        credentials:
+          username: "JohnDoe"
+          password_file: "/path/to/password_file.pem" 
+          private_key_file: "/path/to/private_key.pem"
