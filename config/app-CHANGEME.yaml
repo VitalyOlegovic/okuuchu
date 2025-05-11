@@ -1,6 +1,6 @@
 lemmy:
   instanceConfig:
-    - instance:
+    - lemmyInstance:
         id: "test-instance"
         url: "https://enterprise.lemmy.ml"
         credentials:

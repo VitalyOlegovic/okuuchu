@@ -6,6 +6,7 @@ module Config where
 import Data.Yaml (FromJSON, decodeFileEither)
 import GHC.Generics (Generic)
 import Data.Text (Text, pack)
+import Data.List (find)
 
 -- Main configuration structure
 data Config = Config
@@ -54,12 +55,9 @@ loadConfig path = do
 
 -- Helper function to find an instance by ID
 findInstance :: Text -> Config -> Maybe Instance
-findInstance identifier config = 
-    foldr (\cfg acc -> if cfg.lemmyInstance.id == identifier 
-                       then Just (lemmyInstance cfg) 
-                       else acc) 
-          Nothing 
-          (instanceConfig (lemmy config))
+findInstance identifier config =
+    lemmyInstance
+    <$> find (\inst -> inst.lemmyInstance.id == identifier) (instanceConfig (lemmy config))
 
 -- Get URL for an instance by ID
 getInstanceUrl :: Text -> Config -> Either Text Text
