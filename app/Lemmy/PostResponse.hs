@@ -4,7 +4,7 @@
 module Lemmy.PostResponse where
 
 import GHC.Generics (Generic)
-import Data.Aeson (ToJSON, encode, defaultOptions, FromJSON)
+import Data.Aeson (ToJSON, encode, defaultOptions, FromJSON, parseJSON, fieldLabelModifier, genericParseJSON, camelTo2, toJSON, genericToJSON)
 import Data.Text (Text)
 import Data.Time (UTCTime)
 
@@ -13,7 +13,10 @@ data PostResponse = PostResponse
   { postView :: Maybe PostView
   } deriving (Show, Generic)
 
-instance FromJSON PostResponse
+instance FromJSON PostResponse where
+    parseJSON = genericParseJSON defaultOptions 
+      { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
+
 instance ToJSON PostResponse
 
 data PostView = PostView
@@ -34,7 +37,10 @@ data PostView = PostView
   , post :: Maybe Post
   } deriving (Show, Generic)
 
-instance FromJSON PostView
+instance FromJSON PostView where
+  parseJSON = genericParseJSON defaultOptions 
+    { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
+
 instance ToJSON PostView
 
 data Tag = Tag
@@ -47,7 +53,10 @@ data Tag = Tag
   , id :: Maybe Double
   } deriving (Show, Generic)
 
-instance FromJSON Tag
+instance FromJSON Tag where
+  parseJSON = genericParseJSON defaultOptions 
+    { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
+
 instance ToJSON Tag
 
 data CreatorCommunityActions = CreatorCommunityActions
@@ -62,7 +71,10 @@ data CreatorCommunityActions = CreatorCommunityActions
   , communityId :: Maybe Double
   } deriving (Show, Generic)
 
-instance FromJSON CreatorCommunityActions
+instance FromJSON CreatorCommunityActions where
+  parseJSON = genericParseJSON defaultOptions 
+    { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
+
 instance ToJSON CreatorCommunityActions
 
 data CreatorInstanceActions = CreatorInstanceActions
@@ -73,7 +85,10 @@ data CreatorInstanceActions = CreatorInstanceActions
   , personId :: Maybe Double
   } deriving (Show, Generic)
 
-instance FromJSON CreatorInstanceActions
+instance FromJSON CreatorInstanceActions where
+  parseJSON = genericParseJSON defaultOptions 
+    { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
+
 instance ToJSON CreatorInstanceActions
 
 data PostActions = PostActions
@@ -88,7 +103,10 @@ data PostActions = PostActions
   , postId :: Maybe Double
   } deriving (Show, Generic)
 
-instance FromJSON PostActions
+instance FromJSON PostActions where
+  parseJSON = genericParseJSON defaultOptions 
+    { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
+
 instance ToJSON PostActions
 
 data PersonActions = PersonActions
@@ -108,7 +126,10 @@ data ImageDetails = ImageDetails
   , link :: Maybe Text
   } deriving (Show, Generic)
 
-instance FromJSON ImageDetails
+instance FromJSON ImageDetails where
+  parseJSON = genericParseJSON defaultOptions 
+    { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
+
 instance ToJSON ImageDetails
 
 data Community = Community
@@ -142,7 +163,10 @@ data Community = Community
   , id :: Maybe Double
   } deriving (Show, Generic)
 
-instance FromJSON Community
+instance FromJSON Community where
+  parseJSON = genericParseJSON defaultOptions 
+    { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
+
 instance ToJSON Community
 
 data Creator = Creator
@@ -164,7 +188,10 @@ data Creator = Creator
   , id :: Maybe Double
   } deriving (Show, Generic)
 
-instance FromJSON Creator
+instance FromJSON Creator where
+  parseJSON = genericParseJSON defaultOptions 
+    { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
+
 instance ToJSON Creator
 
 data Post = Post
@@ -202,5 +229,10 @@ data Post = Post
   , id :: Maybe Double
   } deriving (Show, Generic)
 
-instance FromJSON Post
-instance ToJSON Post
+instance FromJSON Post where
+  parseJSON = genericParseJSON defaultOptions 
+    { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
+
+instance ToJSON Post where
+  toJSON = genericToJSON defaultOptions 
+    { fieldLabelModifier = camelTo2 '_' . dropWhile (== '_') }
