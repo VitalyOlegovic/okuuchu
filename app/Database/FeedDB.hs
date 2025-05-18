@@ -3,12 +3,11 @@
 module Database.FeedDB where
 
 import Control.Monad (void)
+import Data.Int (Int64)
 import qualified Data.Text as T
 import Database.SQLite.Simple
-import Database.SQLite.Simple.FromRow
-import Database.SQLite.Simple.ToRow
 import qualified Feeds as F
-import Data.Int (Int64)
+import Config
 
 -- Data type representing a feed entry
 data FeedEntry = FeedEntry
@@ -46,10 +45,11 @@ initializeDB dbPath = do
 -- Insert a new FeedEntry and return the last inserted row ID
 insertFeedEntry :: Connection -> FeedEntry -> IO Int64
 insertFeedEntry conn entry = do
-  execute conn 
-    "INSERT INTO feed_entries (title, date, content, links) VALUES (?, ?, ?, ?)" 
+  execute
+    conn
+    "INSERT INTO feed_entries (title, date, content, links) VALUES (?, ?, ?, ?)"
     entry
-  lastInsertRowId conn  -- Returns the ID of the newly inserted row
+  lastInsertRowId conn -- Returns the ID of the newly inserted row
 
 -- Get all feed entries from the database
 getAllFeedEntries :: Connection -> IO [FeedEntry]
@@ -90,64 +90,25 @@ feedToDBEntry feed =
       links = F.links feed
     }
 
-saveFeedEntry :: F.FeedEntry -> IO Int64
-saveFeedEntry feedToConvert = do
-  connection <- initializeDB "feeds.db"
+dbEntryToFeed :: FeedEntry -> F.FeedEntry
+dbEntryToFeed feed =
+  F.FeedEntry
+    { F.title = title feed,
+      F.date = date feed,
+      F.content = content feed,
+      F.links = links feed
+    }
+
+saveFeedEntry :: Config -> F.FeedEntry -> IO Int64
+saveFeedEntry config feedToConvert = do
+  connection <- initializeDB $ getSQLiteFilePath config
   let feed = feedToDBEntry feedToConvert
   insertFeedEntry connection feed
 
+readAllFeedEntries :: Config -> IO [F.FeedEntry]
+readAllFeedEntries config = do
+  connection <- initializeDB $ getSQLiteFilePath config
+  allFeedEntries <- getAllFeedEntries connection
+  let convertedFeedEntries = fmap dbEntryToFeed allFeedEntries
+  return convertedFeedEntries
 
-feedDBEntrypont :: IO ()
-feedDBEntrypont = do
-  -- Initialize the database
-  conn <- initializeDB "feeds.db"
-
-  -- Create some sample feed entries
-  let sampleEntries =
-        [ FeedEntry
-            { title = "Haskell is great",
-              date = Just "2023-05-15",
-              content = "An article about Haskell",
-              links = ["http://example.com/haskell", "http://example.com/fp"]
-            },
-          FeedEntry
-            { title = "Learning SQLite",
-              date = Just "2023-05-16",
-              content = "How to use SQLite with Haskell",
-              links = ["http://example.com/sqlite"]
-            },
-          FeedEntry
-            { title = "Functional Programming",
-              date = Nothing,
-              content = "Introduction to FP concepts",
-              links = []
-            }
-        ]
-
-  -- Insert sample entries
-  mapM_ (insertFeedEntry conn) sampleEntries
-
-  -- Query all entries
-  putStrLn "All feed entries:"
-  entries <- getAllFeedEntries conn
-  mapM_ print entries
-
-  -- Query entries by title
-  putStrLn "\nEntries with 'Haskell' in title:"
-  haskellEntries <- getFeedEntriesByTitle conn "Haskell"
-  mapM_ print haskellEntries
-
-  -- Update an entry
-  let updatedEntry = (head sampleEntries) {content = "Updated content about Haskell"}
-  updateFeedEntry conn "Haskell is great" updatedEntry
-
-  -- Verify update
-  putStrLn "\nAfter update:"
-  updatedEntries <- getFeedEntriesByTitle conn "Haskell"
-  mapM_ print updatedEntries
-
-  -- Clean up (optional)
-  deleteFeedEntry conn "Functional Programming"
-
-  -- Close connection
-  close conn

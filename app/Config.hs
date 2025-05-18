@@ -11,11 +11,17 @@ import Data.List (find)
 -- Main configuration structure
 data Config = Config
     { lemmy :: LemmyConfig
+    , sqlite :: SQLiteConfig
     } deriving (Show, Generic)
 
 -- Lemmy configuration
 data LemmyConfig = LemmyConfig
     { instanceConfig :: [InstanceConfig]
+    } deriving (Show, Generic)
+
+-- SQLite configuration
+data SQLiteConfig = SQLiteConfig
+    { filePath :: String
     } deriving (Show, Generic)
 
 -- Instance configuration
@@ -40,6 +46,7 @@ data Credentials = Credentials
 -- Automatically derive FromJSON instances
 instance FromJSON Config
 instance FromJSON LemmyConfig
+instance FromJSON SQLiteConfig
 instance FromJSON InstanceConfig
 instance FromJSON Instance
 instance FromJSON Credentials
@@ -86,3 +93,7 @@ getInstancePrivateKeyFile identifier config =
     case findInstance identifier config of
         Just myInstance -> Right $ private_key_file (credentials myInstance)
         Nothing -> Left $ pack "Instance not found: " <> identifier
+
+getSQLiteFilePath :: Config -> String
+getSQLiteFilePath config =
+    filePath $ sqlite config
