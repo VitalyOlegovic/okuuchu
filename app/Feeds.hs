@@ -16,7 +16,7 @@ import qualified Text.Atom.Feed as Atom
 import Text.Atom.Feed (TextContent(..))
 import qualified Text.Atom.Feed as Link
 
-data FeedEntry = FeedEntry { title :: T.Text
+data FeedEntryDTO = FeedEntryDTO { title :: T.Text
                            , date :: Maybe T.Text
                            , content :: T.Text
                            , links :: [T.Text]
@@ -29,7 +29,7 @@ fetchFeed url = do
     response <- httpBS request
     return $ getResponseBody response
 
-feedToFeedEntries :: FeedTypes.Feed -> [FeedEntry]
+feedToFeedEntries :: FeedTypes.Feed -> [FeedEntryDTO]
 feedToFeedEntries feed = case feed of
     FeedTypes.RSSFeed rss ->
         fmap feedItemToFeedEntry (RSS.rssItems channel)
@@ -42,16 +42,16 @@ feedToFeedEntries feed = case feed of
 
     FeedTypes.XMLFeed _ -> []
 
-feedItemToFeedEntry :: RSS.RSSItem -> FeedEntry
-feedItemToFeedEntry item = FeedEntry {
+feedItemToFeedEntry :: RSS.RSSItem -> FeedEntryDTO
+feedItemToFeedEntry item = FeedEntryDTO {
     title = fromMaybe "- [No Title]" (RSS.rssItemTitle item)
     , date = RSS.rssItemPubDate item
     , content = fromMaybe "" (RSS.rssItemDescription item)
     , links = maybeToList $ RSS.rssItemLink item
         }
 
-atomItemToFeedEntry :: Atom.Entry -> FeedEntry
-atomItemToFeedEntry entry = FeedEntry {
+atomItemToFeedEntry :: Atom.Entry -> FeedEntryDTO
+atomItemToFeedEntry entry = FeedEntryDTO {
     title = case Atom.entryTitle entry of
                     TextString txt -> txt
                     HTMLString txt -> txt

@@ -10,8 +10,9 @@ import qualified Feeds as F
 import Config
 
 -- Data type representing a feed entry
-data FeedEntry = FeedEntry
-  { title :: T.Text,
+data FeedEntryEntity = FeedEntryEntity
+  { feedEntryId :: Maybe Int,
+    title :: T.Text,
     date :: Maybe T.Text,
     content :: T.Text,
     links :: [T.Text]
@@ -19,14 +20,14 @@ data FeedEntry = FeedEntry
   deriving (Show)
 
 -- For converting between SQL rows and FeedEntry
-instance FromRow FeedEntry where
-  fromRow = FeedEntry <$> field <*> field <*> field <*> (splitLinks <$> field)
+instance FromRow FeedEntryEntity where
+  fromRow = FeedEntryEntity <$> field <*> field <*> field <*> field <*> (splitLinks <$> field)
     where
       splitLinks :: T.Text -> [T.Text]
       splitLinks = T.splitOn "|||"
 
-instance ToRow FeedEntry where
-  toRow (FeedEntry t d c ls) = toRow (t, d, c, T.intercalate "|||" ls)
+instance ToRow FeedEntryEntity where
+  toRow (FeedEntryEntity _ t d c ls) = toRow (t, d, c, T.intercalate "|||" ls)
 
 -- Initialize the database and create table if needed
 initializeDB :: FilePath -> IO Connection
@@ -43,7 +44,7 @@ initializeDB dbPath = do
   return conn
 
 -- Insert a new FeedEntry and return the last inserted row ID
-insertFeedEntry :: Connection -> FeedEntry -> IO Int64
+insertFeedEntry :: Connection -> FeedEntryEntity -> IO Int64
 insertFeedEntry conn entry = do
   execute
     conn
@@ -52,11 +53,11 @@ insertFeedEntry conn entry = do
   lastInsertRowId conn -- Returns the ID of the newly inserted row
 
 -- Get all feed entries from the database
-getAllFeedEntries :: Connection -> IO [FeedEntry]
-getAllFeedEntries conn = query_ conn "SELECT title, date, content, links FROM feed_entries"
+getAllFeedEntries :: Connection -> IO [FeedEntryEntity]
+getAllFeedEntries conn = query_ conn "SELECT id, title, date, content, links FROM feed_entries"
 
 -- Get feed entries by title (case insensitive partial match)
-getFeedEntriesByTitle :: Connection -> T.Text -> IO [FeedEntry]
+getFeedEntriesByTitle :: Connection -> T.Text -> IO [FeedEntryEntity]
 getFeedEntriesByTitle conn titlePattern =
   query
     conn
@@ -64,13 +65,13 @@ getFeedEntriesByTitle conn titlePattern =
     (Only $ "%" <> titlePattern <> "%")
 
 -- Update an existing feed entry by title
-updateFeedEntry :: Connection -> T.Text -> FeedEntry -> IO ()
-updateFeedEntry conn oldTitle newEntry =
+updateFeedEntry :: Connection -> Int -> FeedEntryEntity -> IO ()
+updateFeedEntry conn feedId newEntry =
   void $
     execute
       conn
-      "UPDATE feed_entries SET title = ?, date = ?, content = ?, links = ? WHERE title = ?"
-      (title newEntry, date newEntry, content newEntry, T.intercalate "|||" (links newEntry), oldTitle)
+      "UPDATE feed_entries SET title = ?, date = ?, content = ?, links = ? WHERE id = ?"
+      (title newEntry, date newEntry, content newEntry, T.intercalate "|||" (links newEntry), feedId)
 
 -- Delete a feed entry by title
 deleteFeedEntry :: Connection -> T.Text -> IO ()
@@ -81,31 +82,32 @@ deleteFeedEntry conn titleToDelete =
       "DELETE FROM feed_entries WHERE title = ?"
       (Only titleToDelete)
 
-feedToDBEntry :: F.FeedEntry -> FeedEntry
+feedToDBEntry :: F.FeedEntryDTO -> FeedEntryEntity
 feedToDBEntry feed =
-  FeedEntry
-    { title = F.title feed,
+  FeedEntryEntity
+    { feedEntryId = Nothing,
+      title = F.title feed,
       date = F.date feed,
       content = F.content feed,
       links = F.links feed
     }
 
-dbEntryToFeed :: FeedEntry -> F.FeedEntry
+dbEntryToFeed :: FeedEntryEntity -> F.FeedEntryDTO
 dbEntryToFeed feed =
-  F.FeedEntry
+  F.FeedEntryDTO
     { F.title = title feed,
       F.date = date feed,
       F.content = content feed,
       F.links = links feed
     }
 
-saveFeedEntry :: Config -> F.FeedEntry -> IO Int64
+saveFeedEntry :: Config -> F.FeedEntryDTO -> IO Int64
 saveFeedEntry config feedToConvert = do
   connection <- initializeDB $ getSQLiteFilePath config
   let feed = feedToDBEntry feedToConvert
   insertFeedEntry connection feed
 
-readAllFeedEntries :: Config -> IO [F.FeedEntry]
+readAllFeedEntries :: Config -> IO [F.FeedEntryDTO]
 readAllFeedEntries config = do
   connection <- initializeDB $ getSQLiteFilePath config
   allFeedEntries <- getAllFeedEntries connection
