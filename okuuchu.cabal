@@ -55,6 +55,7 @@ executable okuuchu
     Config
     Database
     Database.FeedDB
+    Database.PostDB
     Feeds
     Lemmy
     Lemmy.Community
